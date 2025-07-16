@@ -2,7 +2,7 @@
 
 import tkinter as tk
 from tkinter import messagebox
-import random
+
 
 CELL_SIZE = 80
 ROWS = 4
@@ -60,69 +60,7 @@ class Game:
         self.setup_board()
         self.draw()
 
-    def ai_move(self):
-        if self.turn != 1:
-            return
-        moves = []
-        def piece_value(p):
-            if p is None:
-                return 0
-            if p.name == 'lion':
-                return 1000
-            if p.name in ('elephant', 'giraffe'):
-                return 5
-            if p.name == 'chick':
-                return 2 if p.promoted else 1
-            return 0
-        # board moves
-        for r in range(ROWS):
-            for c in range(COLS):
-                piece = self.board[r][c]
-                if piece and piece.owner == self.turn:
-                    for nr, nc in self.legal_moves(r, c, piece):
-                        captured = self.board[nr][nc]
-                        score = piece_value(captured)
-                        moves.append(("move", r, c, nr, nc, score))
-        # drop moves
-        for idx, piece in enumerate(self.hands[self.turn]):
-            for r in range(ROWS):
-                for c in range(COLS):
-                    if self.board[r][c] is None:
-                        moves.append(("drop", idx, r, c, 0))
-        if not moves:
-            self.end_turn()
-            return
-        max_score = max(m[-1] for m in moves)
-        best = [m for m in moves if m[-1] == max_score]
-        choice = random.choice(best)
-        if choice[0] == "move":
-            _, sr, sc, r, c, _ = choice
-            piece = self.board[sr][sc]
-            target = self.board[r][c]
-            if target and target.owner == self.turn:
-                # skip illegal capture of own piece
-                self.end_turn()
-                return
-            self.board[r][c] = piece
-            self.board[sr][sc] = None
-            if target:
-                target.owner = self.turn
-                target.promoted = False
-                self.hands[self.turn].append(target)
-                if target.name == 'lion':
-                    messagebox.showinfo('Game Over', 'Computer wins!')
-                    self.window.destroy()
-                    return
-            if piece.name == 'chick' and not piece.promoted:
-                if (piece.owner == 0 and r == 0) or (piece.owner == 1 and r == ROWS - 1):
-                    piece.promoted = True
-        else:
-            _, idx, r, c, _ = choice
-            piece = self.hands[self.turn][idx]
-            self.board[r][c] = Piece(piece.name, self.turn)
-            del self.hands[self.turn][idx]
-        self.draw()
-        self.end_turn()
+
 
     def setup_board(self):
         # Player 1 (bottom)
@@ -172,8 +110,7 @@ class Game:
         return moves
 
     def on_click(self, event):
-        if self.turn != 0:
-            return
+
         c = event.x // CELL_SIZE
         r = event.y // CELL_SIZE
         if not self.in_bounds(r, c):
@@ -192,19 +129,7 @@ class Game:
                 piece = self.board[sr][sc]
                 if piece and piece.owner == self.turn:
                     if (r, c) in self.legal_moves(sr, sc, piece):
-                        target = self.board[r][c]
-                        if target and target.owner == self.turn:
-                            # do not allow capturing own piece
-                            self.selected = None
-                            self.draw()
-                            return
-                        self.board[r][c] = piece
-                        self.board[sr][sc] = None
-                        if target:
-                            target.owner = self.turn
-                            target.promoted = False
-                            self.hands[self.turn].append(target)
-                            if target.name == 'lion':
+
                                 messagebox.showinfo('Game Over', f'Player {self.turn+1} wins!')
                                 self.window.destroy()
                                 return
@@ -221,9 +146,7 @@ class Game:
 
     def end_turn(self):
         self.turn = 1 - self.turn
-        self.draw()
-        if self.turn == 1:
-            self.window.after(500, self.ai_move)
+
 
     def run(self):
         self.window.mainloop()
