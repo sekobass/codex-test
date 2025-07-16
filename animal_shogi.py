@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import messagebox
 
+
 CELL_SIZE = 80
 ROWS = 4
 COLS = 3
@@ -58,6 +59,7 @@ class Game:
         self.canvas.bind('<Button-1>', self.on_click)
         self.setup_board()
         self.draw()
+
 
     def setup_board(self):
         # Player 1 (bottom)
@@ -149,6 +151,7 @@ class Game:
 
     def end_turn(self):
         self.turn = 1 - self.turn
+
 
     def run(self):
         self.window.mainloop()
