@@ -61,6 +61,7 @@ class Game:
         self.draw()
 
 
+
     def setup_board(self):
         # Player 1 (bottom)
         self.board[3][0] = Piece('giraffe', 0)
@@ -109,6 +110,7 @@ class Game:
         return moves
 
     def on_click(self, event):
+
         c = event.x // CELL_SIZE
         r = event.y // CELL_SIZE
         if not self.in_bounds(r, c):
@@ -127,14 +129,7 @@ class Game:
                 piece = self.board[sr][sc]
                 if piece and piece.owner == self.turn:
                     if (r, c) in self.legal_moves(sr, sc, piece):
-                        captured = self.board[r][c]
-                        self.board[r][c] = piece
-                        self.board[sr][sc] = None
-                        if captured:
-                            captured.owner = self.turn
-                            captured.promoted = False
-                            self.hands[self.turn].append(captured)
-                            if captured.name == 'lion':
+
                                 messagebox.showinfo('Game Over', f'Player {self.turn+1} wins!')
                                 self.window.destroy()
                                 return
