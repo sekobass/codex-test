@@ -133,65 +133,6 @@ class Game:
                             moves.append(("drop", idx, r, c))
             return moves
 
-        def apply_move(board, hands, move, player):
-            if move[0] == "move":
-                _, sr, sc, r, c = move
-                piece = board[sr][sc]
-                board[sr][sc] = None
-                target = board[r][c]
-                if target:
-                    target.owner = player
-                    target.promoted = False
-                    hands[player].append(target)
-                board[r][c] = Piece(piece.name, player, piece.promoted)
-                if piece.name == 'chick' and not piece.promoted:
-                    if (player == 0 and r == 0) or (player == 1 and r == ROWS - 1):
-                        board[r][c].promoted = True
-            else:
-                _, idx, r, c = move
-                piece = hands[player][idx]
-                board[r][c] = Piece(piece.name, player, piece.promoted)
-                del hands[player][idx]
-            return board, hands
-
-        def minimax(board, hands, depth, player, alpha, beta):
-            if depth == 0:
-                return evaluate(board, hands), None
-            moves = generate_moves(board, hands, player)
-            if not moves:
-                return evaluate(board, hands), None
-            if player == 1:
-                best = float('-inf')
-                best_move = None
-                for mv in moves:
-                    nb, nh = apply_move(clone_board(board), clone_hands(hands), mv, player)
-                    score, _ = minimax(nb, nh, depth - 1, 0, alpha, beta)
-                    if score > best:
-                        best = score
-                        best_move = mv
-                    alpha = max(alpha, best)
-                    if beta <= alpha:
-                        break
-                return best, best_move
-            else:
-                best = float('inf')
-                best_move = None
-                for mv in moves:
-                    nb, nh = apply_move(clone_board(board), clone_hands(hands), mv, player)
-                    score, _ = minimax(nb, nh, depth - 1, 1, alpha, beta)
-                    if score < best:
-                        best = score
-                        best_move = mv
-                    beta = min(beta, best)
-                    if beta <= alpha:
-                        break
-                return best, best_move
-
-        _, choice = minimax(clone_board(self.board), clone_hands(self.hands), 2, 1, float('-inf'), float('inf'))
-        if choice is None:
-            self.end_turn()
-            return
-
         if choice[0] == "move":
             _, sr, sc, r, c = choice
             piece = self.board[sr][sc]
@@ -281,12 +222,7 @@ class Game:
     def on_click(self, event):
         if self.turn != 0:
             return
-        if event.y >= ROWS * CELL_SIZE:
-            index = event.x // self.hand_size
-            if index < len(self.hands[self.turn]):
-                self.selected = ('hand', index)
-                self.draw()
-            return
+
         c = event.x // CELL_SIZE
         r = event.y // CELL_SIZE
         if not self.in_bounds(r, c):
