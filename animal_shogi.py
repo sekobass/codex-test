@@ -281,12 +281,14 @@ class Game:
     def on_click(self, event):
         if self.turn != 0:
             return
+
         if event.y >= ROWS * CELL_SIZE:
             index = event.x // self.hand_size
             if index < len(self.hands[self.turn]):
                 self.selected = ('hand', index)
                 self.draw()
             return
+
         c = event.x // CELL_SIZE
         r = event.y // CELL_SIZE
         if not self.in_bounds(r, c):
