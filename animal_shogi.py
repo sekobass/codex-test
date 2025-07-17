@@ -54,7 +54,10 @@ class Game:
         self.selected = None  # (row,col) or ('hand', index)
         self.window = tk.Tk()
         self.window.title('Animal Shogi')
-        self.canvas = tk.Canvas(self.window, width=COLS*CELL_SIZE, height=ROWS*CELL_SIZE)
+        # extra space at the bottom for player's hand
+        self.hand_size = CELL_SIZE // 2
+        canvas_height = ROWS * CELL_SIZE + self.hand_size
+        self.canvas = tk.Canvas(self.window, width=COLS*CELL_SIZE, height=canvas_height)
         self.canvas.pack()
         self.canvas.bind('<Button-1>', self.on_click)
         self.setup_board()
@@ -130,65 +133,6 @@ class Game:
                             moves.append(("drop", idx, r, c))
             return moves
 
-        def apply_move(board, hands, move, player):
-            if move[0] == "move":
-                _, sr, sc, r, c = move
-                piece = board[sr][sc]
-                board[sr][sc] = None
-                target = board[r][c]
-                if target:
-                    target.owner = player
-                    target.promoted = False
-                    hands[player].append(target)
-                board[r][c] = Piece(piece.name, player, piece.promoted)
-                if piece.name == 'chick' and not piece.promoted:
-                    if (player == 0 and r == 0) or (player == 1 and r == ROWS - 1):
-                        board[r][c].promoted = True
-            else:
-                _, idx, r, c = move
-                piece = hands[player][idx]
-                board[r][c] = Piece(piece.name, player, piece.promoted)
-                del hands[player][idx]
-            return board, hands
-
-        def minimax(board, hands, depth, player, alpha, beta):
-            if depth == 0:
-                return evaluate(board, hands), None
-            moves = generate_moves(board, hands, player)
-            if not moves:
-                return evaluate(board, hands), None
-            if player == 1:
-                best = float('-inf')
-                best_move = None
-                for mv in moves:
-                    nb, nh = apply_move(clone_board(board), clone_hands(hands), mv, player)
-                    score, _ = minimax(nb, nh, depth - 1, 0, alpha, beta)
-                    if score > best:
-                        best = score
-                        best_move = mv
-                    alpha = max(alpha, best)
-                    if beta <= alpha:
-                        break
-                return best, best_move
-            else:
-                best = float('inf')
-                best_move = None
-                for mv in moves:
-                    nb, nh = apply_move(clone_board(board), clone_hands(hands), mv, player)
-                    score, _ = minimax(nb, nh, depth - 1, 1, alpha, beta)
-                    if score < best:
-                        best = score
-                        best_move = mv
-                    beta = min(beta, best)
-                    if beta <= alpha:
-                        break
-                return best, best_move
-
-        _, choice = minimax(clone_board(self.board), clone_hands(self.hands), 2, 1, float('-inf'), float('inf'))
-        if choice is None:
-            self.end_turn()
-            return
-
         if choice[0] == "move":
             _, sr, sc, r, c = choice
             piece = self.board[sr][sc]
@@ -240,13 +184,27 @@ class Game:
                 if piece:
                     self.canvas.create_text(x1 + CELL_SIZE/2, y1 + CELL_SIZE/2,
                                              text=piece.display, font=('Arial', 30))
-        if self.selected and self.selected[0] != 'hand':
-            r, c = self.selected
-            x1 = c * CELL_SIZE
-            y1 = r * CELL_SIZE
-            x2 = x1 + CELL_SIZE
-            y2 = y1 + CELL_SIZE
-            self.canvas.create_rectangle(x1, y1, x2, y2, outline='red', width=3)
+        # draw player's captured pieces at the bottom
+        for i, piece in enumerate(self.hands[0]):
+            x = i * self.hand_size + self.hand_size/2
+            y = ROWS * CELL_SIZE + self.hand_size/2
+            self.canvas.create_text(x, y, text=piece.display, font=('Arial', 20))
+
+        if self.selected:
+            if self.selected[0] == 'hand':
+                i = self.selected[1]
+                x1 = i * self.hand_size
+                y1 = ROWS * CELL_SIZE
+                x2 = x1 + self.hand_size
+                y2 = y1 + self.hand_size
+                self.canvas.create_rectangle(x1, y1, x2, y2, outline='red', width=3)
+            else:
+                r, c = self.selected
+                x1 = c * CELL_SIZE
+                y1 = r * CELL_SIZE
+                x2 = x1 + CELL_SIZE
+                y2 = y1 + CELL_SIZE
+                self.canvas.create_rectangle(x1, y1, x2, y2, outline='red', width=3)
 
     def in_bounds(self, r, c):
         return 0 <= r < ROWS and 0 <= c < COLS
@@ -264,6 +222,7 @@ class Game:
     def on_click(self, event):
         if self.turn != 0:
             return
+
         c = event.x // CELL_SIZE
         r = event.y // CELL_SIZE
         if not self.in_bounds(r, c):

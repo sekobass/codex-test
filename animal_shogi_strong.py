@@ -53,7 +53,7 @@ class Game:
         self.selected = None  # (row,col) or ('hand', index)
         self.window = tk.Tk()
         self.window.title('Animal Shogi (Strong AI)')
-        self.canvas = tk.Canvas(self.window, width=COLS*CELL_SIZE, height=ROWS*CELL_SIZE)
+
         self.canvas.pack()
         self.canvas.bind('<Button-1>', self.on_click)
         self.setup_board()
@@ -247,13 +247,7 @@ class Game:
                 if piece:
                     self.canvas.create_text(x1 + CELL_SIZE/2, y1 + CELL_SIZE/2,
                                              text=piece.display, font=('Arial', 30))
-        if self.selected and self.selected[0] != 'hand':
-            r, c = self.selected
-            x1 = c * CELL_SIZE
-            y1 = r * CELL_SIZE
-            x2 = x1 + CELL_SIZE
-            y2 = y1 + CELL_SIZE
-            self.canvas.create_rectangle(x1, y1, x2, y2, outline='red', width=3)
+
 
     def in_bounds(self, r, c):
         return 0 <= r < ROWS and 0 <= c < COLS
@@ -271,6 +265,7 @@ class Game:
     def on_click(self, event):
         if self.turn != 0:
             return
+
         c = event.x // CELL_SIZE
         r = event.y // CELL_SIZE
         if not self.in_bounds(r, c):
