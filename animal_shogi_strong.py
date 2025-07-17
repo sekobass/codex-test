@@ -63,7 +63,12 @@ class Game:
         self.canvas.pack()
         self.canvas.bind('<Button-1>', self.on_click)
         self.setup_board()
+        # allow player to choose to play second
+        if not messagebox.askyesno('Turn Order', 'Play first? (Yes: first, No: second)'):
+            self.turn = 1
         self.draw()
+        if self.turn == 1:
+            self.window.after(500, self.ai_move)
 
     def ai_move(self):
         if self.turn != 1:

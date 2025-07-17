@@ -61,7 +61,69 @@ class Game:
         self.canvas.pack()
         self.canvas.bind('<Button-1>', self.on_click)
         self.setup_board()
+        # choose whether to move first or second
+        if not messagebox.askyesno('Turn Order', 'Play first? (Yes: first, No: second)'):
+            self.turn = 1
         self.draw()
+        if self.turn == 1:
+            # CPU moves immediately if player chose second
+            self.window.after(500, self.ai_move)
+
+    def ai_move(self):
+        if self.turn != 1:
+            return
+
+        def piece_value(p: Piece) -> int:
+            if p.name == 'lion':
+                return 1000
+            if p.name in ('elephant', 'giraffe'):
+                return 5
+            if p.name == 'chick':
+                return 3 if p.promoted else 1
+            return 0
+
+        def evaluate(board, hands):
+            lion0 = False
+            lion1 = False
+            total = 0
+            for r in range(ROWS):
+                for c in range(COLS):
+                    p = board[r][c]
+                    if p:
+                        if p.name == 'lion':
+                            if p.owner == 0:
+                                lion0 = True
+                            else:
+                                lion1 = True
+                        val = piece_value(p)
+                        total += val if p.owner == 1 else -val
+            if not lion0:
+                return float('inf')
+            if not lion1:
+                return float('-inf')
+            for owner, pieces in hands.items():
+                for p in pieces:
+                    val = piece_value(p)
+                    total += val if owner == 1 else -val
+            return total
+
+        def clone_board(board):
+            return [[Piece(p.name, p.owner, p.promoted) if p else None for p in row] for row in board]
+
+        def clone_hands(hands):
+            return {0: [Piece(p.name, p.owner, p.promoted) for p in hands[0]],
+                    1: [Piece(p.name, p.owner, p.promoted) for p in hands[1]]}
+
+        def legal_moves_board(board, r, c, piece):
+            moves = []
+            for dr, dc in piece.moves():
+                nr, nc = r + dr, c + dc
+                if 0 <= nr < ROWS and 0 <= nc < COLS:
+                    target = board[nr][nc]
+                    if not target or target.owner != piece.owner:
+                        moves.append((nr, nc))
+            return moves
+
 
     def ai_move(self):
         if self.turn != 1:
