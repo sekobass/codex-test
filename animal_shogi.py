@@ -54,7 +54,10 @@ class Game:
         self.selected = None  # (row,col) or ('hand', index)
         self.window = tk.Tk()
         self.window.title('Animal Shogi')
-        self.canvas = tk.Canvas(self.window, width=COLS*CELL_SIZE, height=ROWS*CELL_SIZE)
+        # extra space at the bottom for player's hand
+        self.hand_size = CELL_SIZE // 2
+        canvas_height = ROWS * CELL_SIZE + self.hand_size
+        self.canvas = tk.Canvas(self.window, width=COLS*CELL_SIZE, height=canvas_height)
         self.canvas.pack()
         self.canvas.bind('<Button-1>', self.on_click)
         self.setup_board()
@@ -240,13 +243,27 @@ class Game:
                 if piece:
                     self.canvas.create_text(x1 + CELL_SIZE/2, y1 + CELL_SIZE/2,
                                              text=piece.display, font=('Arial', 30))
-        if self.selected and self.selected[0] != 'hand':
-            r, c = self.selected
-            x1 = c * CELL_SIZE
-            y1 = r * CELL_SIZE
-            x2 = x1 + CELL_SIZE
-            y2 = y1 + CELL_SIZE
-            self.canvas.create_rectangle(x1, y1, x2, y2, outline='red', width=3)
+        # draw player's captured pieces at the bottom
+        for i, piece in enumerate(self.hands[0]):
+            x = i * self.hand_size + self.hand_size/2
+            y = ROWS * CELL_SIZE + self.hand_size/2
+            self.canvas.create_text(x, y, text=piece.display, font=('Arial', 20))
+
+        if self.selected:
+            if self.selected[0] == 'hand':
+                i = self.selected[1]
+                x1 = i * self.hand_size
+                y1 = ROWS * CELL_SIZE
+                x2 = x1 + self.hand_size
+                y2 = y1 + self.hand_size
+                self.canvas.create_rectangle(x1, y1, x2, y2, outline='red', width=3)
+            else:
+                r, c = self.selected
+                x1 = c * CELL_SIZE
+                y1 = r * CELL_SIZE
+                x2 = x1 + CELL_SIZE
+                y2 = y1 + CELL_SIZE
+                self.canvas.create_rectangle(x1, y1, x2, y2, outline='red', width=3)
 
     def in_bounds(self, r, c):
         return 0 <= r < ROWS and 0 <= c < COLS
@@ -263,6 +280,12 @@ class Game:
 
     def on_click(self, event):
         if self.turn != 0:
+            return
+        if event.y >= ROWS * CELL_SIZE:
+            index = event.x // self.hand_size
+            if index < len(self.hands[self.turn]):
+                self.selected = ('hand', index)
+                self.draw()
             return
         c = event.x // CELL_SIZE
         r = event.y // CELL_SIZE
