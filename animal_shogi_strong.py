@@ -2,7 +2,6 @@
 
 import tkinter as tk
 from tkinter import messagebox
-import random
 
 CELL_SIZE = 80
 ROWS = 4
@@ -53,7 +52,7 @@ class Game:
         self.turn = 0  # 0 bottom, 1 top
         self.selected = None  # (row,col) or ('hand', index)
         self.window = tk.Tk()
-        self.window.title('Animal Shogi')
+        self.window.title('Animal Shogi (Strong AI)')
         # extra space at the bottom for player's hand
         self.hand_size = CELL_SIZE // 2
         canvas_height = ROWS * CELL_SIZE + self.hand_size
@@ -90,6 +89,10 @@ class Game:
                             else:
                                 lion1 = True
                         val = piece_value(p)
+                        pos_bonus = 0
+                        if p.name == 'chick' and not p.promoted:
+                            pos_bonus = (ROWS - r) if p.owner == 0 else (r + 1)
+                        val += pos_bonus
                         total += val if p.owner == 1 else -val
             if not lion0:
                 return float('inf')
@@ -98,6 +101,10 @@ class Game:
             for owner, pieces in hands.items():
                 for p in pieces:
                     val = piece_value(p)
+                    pos_bonus = 0
+                    if p.name == 'chick' and not p.promoted:
+                        pos_bonus = ROWS if owner == 0 else 1
+                    val += pos_bonus
                     total += val if owner == 1 else -val
             return total
 
@@ -187,7 +194,7 @@ class Game:
                         break
                 return best, best_move
 
-        _, choice = minimax(clone_board(self.board), clone_hands(self.hands), 2, 1, float('-inf'), float('inf'))
+        _, choice = minimax(clone_board(self.board), clone_hands(self.hands), 3, 1, float('-inf'), float('inf'))
         if choice is None:
             self.end_turn()
             return
